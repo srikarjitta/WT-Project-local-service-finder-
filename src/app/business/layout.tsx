@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -189,6 +189,13 @@ function BusinessShell({ children }: { children: React.ReactNode }) {
             className="flex items-center justify-between text-xs text-slate-500 hover:text-indigo-600 font-medium px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
           >
             <span>Customer View</span>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </Link>
+          <Link
+            href="/auth"
+            className="flex items-center justify-between text-xs text-slate-500 hover:text-indigo-600 font-medium px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            <span>Sign In / Register</span>
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>
         </div>
