@@ -1,262 +1,198 @@
 ﻿"use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { Clock, Save, ArrowLeft, CheckCircle2, AlertCircle, Copy } from "lucide-react";
+import {
+  Clock,
+  Save,
+  ArrowLeft,
+  CheckCircle2,
+  Copy,
+  Zap,
+  Check,
+} from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getOwnerBusiness, getBusinessHours, saveBusinessHours } from "@/actions/business";
-import type { Business, BusinessHours } from "@/types/database.types";
-
-const DAY_NAMES = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+import { useBusiness, type DaySchedule } from "@/context/BusinessContext";
 
 export default function BusinessHoursPage() {
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const { hours, business, updateHours, updateProfile } = useBusiness();
+  const [schedule, setSchedule] = useState<DaySchedule[]>([...hours]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Initialize schedule with standard 9:00 AM - 6:00 PM for weekdays, closed on Sunday
-  const [schedule, setSchedule] = useState<
-    Array<{ day_of_week: number; open_time: string; close_time: string; is_closed: boolean }>
-  >(
-    DAY_NAMES.map((_, idx) => ({
-      day_of_week: idx,
-      open_time: "09:00",
-      close_time: "18:00",
-      is_closed: idx === 0, // Sunday closed by default
-    }))
-  );
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
-  useEffect(() => {
-    async function init() {
-      try {
-        setIsLoading(true);
-        const { business: currentBiz } = await getOwnerBusiness();
-        setBusiness(currentBiz);
-
-        if (currentBiz) {
-          const hours = await getBusinessHours(currentBiz.id);
-          if (hours && hours.length > 0) {
-            // Map existing DB hours
-            setSchedule((prev) =>
-              prev.map((item) => {
-                const found = hours.find((h) => h.day_of_week === item.day_of_week);
-                return found
-                  ? {
-                      day_of_week: found.day_of_week,
-                      open_time: found.open_time.substring(0, 5),
-                      close_time: found.close_time.substring(0, 5),
-                      is_closed: found.is_closed,
-                    }
-                  : item;
-              })
-            );
-          }
-        }
-      } catch (err) {
-        console.error("Error loading hours:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    init();
-  }, []);
-
-  const handleDayChange = (
-    dayIndex: number,
-    field: "open_time" | "close_time" | "is_closed",
-    value: any
-  ) => {
+  const handleDayChange = (dayIndex: number, field: keyof DaySchedule, value: any) => {
     setSchedule((prev) =>
-      prev.map((item) => (item.day_of_week === dayIndex ? { ...item, [field]: value } : item))
+      prev.map((item) => (item.dayIndex === dayIndex ? { ...item, [field]: value } : item))
     );
   };
 
   const copyMondayToWeekdays = () => {
-    const monday = schedule.find((s) => s.day_of_week === 1);
+    const monday = schedule.find((s) => s.dayIndex === 1);
     if (!monday) return;
 
     setSchedule((prev) =>
       prev.map((item) => {
-        // Weekdays: Monday (1) through Friday (5)
-        if (item.day_of_week >= 1 && item.day_of_week <= 5) {
+        if (item.dayIndex >= 1 && item.dayIndex <= 5) {
           return {
             ...item,
-            open_time: monday.open_time,
-            close_time: monday.close_time,
-            is_closed: monday.is_closed,
+            isOpen: monday.isOpen,
+            openTime: monday.openTime,
+            closeTime: monday.closeTime,
+            isSplitShift: monday.isSplitShift,
+            eveningOpenTime: monday.eveningOpenTime,
+            eveningCloseTime: monday.eveningCloseTime,
           };
         }
         return item;
       })
     );
-    setFeedback({
-      type: "success",
-      message: "Copied Monday's hours to all weekdays (Tuesday - Friday).",
-    });
+    showToast("Copied Monday hours to all weekdays (Tuesday - Friday)!");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!business) return;
-
-    setIsSaving(true);
-    setFeedback(null);
-
-    try {
-      const res = await saveBusinessHours(business.id, schedule);
-      if (res.success) {
-        setFeedback({ type: "success", message: "Operating hours saved successfully!" });
-      } else {
-        setFeedback({ type: "error", message: res.error || "Failed to save hours." });
-      }
-    } catch (err: any) {
-      setFeedback({ type: "error", message: err.message });
-    } finally {
-      setIsSaving(false);
-    }
+    updateHours(schedule);
+    showToast("Operating hours saved successfully!");
   };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6 max-w-4xl mx-auto py-6">
-        <div className="h-8 w-48 bg-gray-200 animate-pulse rounded-lg" />
-        <div className="h-96 bg-gray-200 animate-pulse rounded-xl" />
-      </div>
-    );
-  }
-
-  if (!business) {
-    return (
-      <div className="text-center py-12 space-y-4">
-        <p className="text-gray-600">Please create your business profile before setting operating hours.</p>
-        <Link href="/business/profile">
-          <Button>Create Business Profile</Button>
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <Link href="/business" className="text-gray-400 hover:text-gray-600 transition-colors">
+          <Link href="/business" className="text-slate-400 hover:text-slate-600 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Operating Hours</h1>
-            <p className="text-sm text-gray-500">
-              Set when your business is open for service and phone consultations.
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Operating Hours & Availability</h1>
+            <p className="text-xs sm:text-sm text-slate-500">
+              Set standard working hours and 24/7 emergency dispatch availability.
             </p>
           </div>
         </div>
 
-        <Button type="button" variant="outline" size="sm" onClick={copyMondayToWeekdays}>
-          <Copy className="h-4 w-4 mr-2" />
-          Copy Mon to Weekdays
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button type="button" variant="outline" size="sm" onClick={copyMondayToWeekdays}>
+            <Copy className="h-3.5 w-3.5 mr-1.5" />
+            Copy Mon to Weekdays
+          </Button>
+          <Button onClick={handleSave} className="shadow-sm">
+            <Save className="h-3.5 w-3.5 mr-1.5" />
+            Save Hours
+          </Button>
+        </div>
       </div>
 
-      {feedback && (
-        <div
-          className={`rounded-xl p-4 flex items-center space-x-3 ${
-            feedback.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-              : "bg-rose-50 text-rose-800 border border-rose-200"
-          }`}
-        >
-          {feedback.type === "success" ? (
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-          ) : (
-            <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
-          )}
-          <span className="text-sm font-medium">{feedback.message}</span>
+      {toastMessage && (
+        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3.5 flex items-center space-x-3 text-emerald-900 animate-in fade-in duration-200">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+          <span className="text-sm font-semibold">{toastMessage}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      {/* 24/7 Emergency Service Banner */}
+      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-white p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start space-x-3">
+          <div className="p-2 rounded-xl bg-indigo-600 text-white shrink-0 mt-0.5">
+            <Zap className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-900">24/7 Emergency On-Call Dispatch</h4>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Highlights your business in late-night and weekend urgent searches with an "Emergency Available" badge.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            const next = !business.amenities.hasEmergencyService;
+            updateProfile({
+              amenities: { ...business.amenities, hasEmergencyService: next },
+            });
+            showToast(next ? "Emergency 24x7 service enabled!" : "Emergency 24x7 service disabled.");
+          }}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+            business.amenities.hasEmergencyService
+              ? "bg-emerald-600 text-white shadow-xs"
+              : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+          }`}
+        >
+          {business.amenities.hasEmergencyService ? "✓ Active 24/7" : "Enable 24/7 Service"}
+        </button>
+      </div>
+
+      {/* 7-Day Schedule Matrix */}
+      <form onSubmit={handleSave}>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Weekly Schedule</CardTitle>
-            <CardDescription>Adjust opening and closing times for each day</CardDescription>
+            <CardTitle className="text-base font-semibold">Weekly Operating Schedule</CardTitle>
+            <CardDescription className="text-xs">
+              Displayed on your profile with real-time "Open Now" or "Closed" indicators
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {schedule.map((item) => {
-              const dayName = DAY_NAMES[item.day_of_week];
-              return (
-                <div
-                  key={item.day_of_week}
-                  className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                    item.is_closed
-                      ? "bg-gray-50/60 border-gray-200 text-gray-400"
-                      : "bg-white border-gray-200 text-gray-900"
-                  }`}
-                >
-                  <div className="w-32 font-medium text-sm flex items-center space-x-2">
-                    <span>{dayName}</span>
-                    {item.is_closed && (
-                      <span className="text-xs text-rose-500 font-semibold bg-rose-50 px-2 py-0.5 rounded-md">
-                        Closed
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center space-x-3 flex-1 sm:justify-end">
-                    {!item.is_closed ? (
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="time"
-                          value={item.open_time}
-                          onChange={(e) =>
-                            handleDayChange(item.day_of_week, "open_time", e.target.value)
-                          }
-                          className="h-9 px-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          required
-                        />
-                        <span className="text-gray-400 text-xs">to</span>
-                        <input
-                          type="time"
-                          value={item.close_time}
-                          onChange={(e) =>
-                            handleDayChange(item.day_of_week, "close_time", e.target.value)
-                          }
-                          className="h-9 px-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          required
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400 italic">Not accepting appointments</span>
-                    )}
-
-                    <label className="flex items-center space-x-2 text-xs font-medium cursor-pointer ml-3 select-none">
-                      <input
-                        type="checkbox"
-                        checked={item.is_closed}
-                        onChange={(e) =>
-                          handleDayChange(item.day_of_week, "is_closed", e.target.checked)
-                        }
-                        className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                      />
-                      <span>Mark Closed</span>
-                    </label>
-                  </div>
+          <CardContent className="space-y-3.5">
+            {schedule.map((item) => (
+              <div
+                key={item.dayIndex}
+                className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                  item.isOpen
+                    ? "bg-white border-slate-200"
+                    : "bg-slate-50/70 border-slate-200 text-slate-400"
+                }`}
+              >
+                <div className="w-32 font-bold text-sm flex items-center space-x-2">
+                  <span>{item.day}</span>
+                  {!item.isOpen && (
+                    <span className="text-[10px] text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded-md">
+                      Closed
+                    </span>
+                  )}
                 </div>
-              );
-            })}
+
+                <div className="flex flex-wrap items-center space-x-3 flex-1 sm:justify-end">
+                  {item.isOpen ? (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="time"
+                        value={item.openTime}
+                        onChange={(e) => handleDayChange(item.dayIndex, "openTime", e.target.value)}
+                        className="h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                        required
+                      />
+                      <span className="text-slate-400 text-xs">to</span>
+                      <input
+                        type="time"
+                        value={item.closeTime}
+                        onChange={(e) => handleDayChange(item.dayIndex, "closeTime", e.target.value)}
+                        className="h-9 px-2.5 rounded-lg border border-slate-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                        required
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">Closed for appointments</span>
+                  )}
+
+                  <label className="flex items-center space-x-2 text-xs font-medium cursor-pointer ml-3 select-none">
+                    <input
+                      type="checkbox"
+                      checked={item.isOpen}
+                      onChange={(e) => handleDayChange(item.dayIndex, "isOpen", e.target.checked)}
+                      className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                    />
+                    <span>Open</span>
+                  </label>
+                </div>
+              </div>
+            ))}
 
             <div className="flex justify-end pt-4">
-              <Button type="submit" isLoading={isSaving} className="min-w-[140px]">
+              <Button type="submit" className="min-w-[140px]">
                 <Save className="h-4 w-4 mr-2" />
                 Save Schedule
               </Button>

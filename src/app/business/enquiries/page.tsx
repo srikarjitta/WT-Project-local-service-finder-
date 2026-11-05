@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   Inbox,
@@ -12,228 +12,224 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  Search,
   Filter,
+  Check,
+  X,
+  FileText,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  getOwnerBusiness,
-  getBusinessEnquiries,
-  updateEnquiryStatus,
-} from "@/actions/business";
-import type { Business, Enquiry } from "@/types/database.types";
+import { useBusiness, type CustomerEnquiry } from "@/context/BusinessContext";
 
-const STATUS_FILTERS = [
-  { id: "all", label: "All Enquiries" },
-  { id: "new", label: "New Leads" },
-  { id: "in_progress", label: "In Progress" },
-  { id: "responded", label: "Responded" },
-  { id: "closed", label: "Closed" },
+const PIPELINE_STAGES = [
+  { id: "all", label: "All Leads" },
+  { id: "new", label: "New Leads", badgeCount: true },
+  { id: "contacted", label: "Contacted" },
+  { id: "quote_sent", label: "Quote Sent" },
+  { id: "won", label: "Won / Completed" },
+  { id: "lost", label: "Lost / Declined" },
 ];
 
 export default function BusinessEnquiriesPage() {
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const { enquiries, business, updateEnquiryStatus } = useBusiness();
+  const [activeStage, setActiveStage] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedEnquiry, setSelectedEnquiry] = useState<CustomerEnquiry | null>(null);
+  const [ownerNotesInput, setOwnerNotesInput] = useState("");
+  const [statusSelect, setStatusSelect] = useState<CustomerEnquiry["status"]>("new");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Status update form inside modal
-  const [newStatus, setNewStatus] = useState<"new" | "in_progress" | "responded" | "closed">("new");
-  const [ownerNotes, setOwnerNotes] = useState("");
-
-  const loadData = async (filter?: string) => {
-    try {
-      setIsLoading(true);
-      const { business: currentBiz } = await getOwnerBusiness();
-      setBusiness(currentBiz);
-
-      if (currentBiz) {
-        const items = await getBusinessEnquiries(currentBiz.id, filter || activeFilter);
-        setEnquiries(items);
-      }
-    } catch (err) {
-      console.error("Error loading enquiries:", err);
-    } finally {
-      setIsLoading(false);
-    }
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
-  useEffect(() => {
-    loadData(activeFilter);
-  }, [activeFilter]);
+  const filteredEnquiries = enquiries.filter((e) => {
+    const matchesStage = activeStage === "all" ? true : e.status === activeStage;
+    const matchesSearch =
+      e.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.customerPhone.includes(searchQuery) ||
+      e.serviceRequested.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      e.locality.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStage && matchesSearch;
+  });
 
-  const handleOpenDetail = (enq: Enquiry) => {
+  const handleOpenModal = (enq: CustomerEnquiry) => {
     setSelectedEnquiry(enq);
-    setNewStatus(enq.status);
-    setOwnerNotes(enq.owner_notes || "");
+    setStatusSelect(enq.status);
+    setOwnerNotesInput(enq.ownerNotes || "");
   };
 
-  const handleStatusUpdate = async (e: React.FormEvent) => {
+  const handleSaveModal = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!business || !selectedEnquiry) return;
-
-    try {
-      setIsUpdating(true);
-      setFeedback(null);
-
-      const res = await updateEnquiryStatus(
-        business.id,
-        selectedEnquiry.id,
-        newStatus,
-        ownerNotes
-      );
-
-      if (res.success) {
-        setFeedback({ type: "success", message: "Enquiry status updated successfully!" });
-        setSelectedEnquiry(null);
-        await loadData(activeFilter);
-      } else {
-        setFeedback({ type: "error", message: res.error || "Failed to update status." });
-      }
-    } catch (err: any) {
-      setFeedback({ type: "error", message: err.message });
-    } finally {
-      setIsUpdating(false);
-    }
+    if (!selectedEnquiry) return;
+    updateEnquiryStatus(selectedEnquiry.id, statusSelect, ownerNotesInput);
+    setSelectedEnquiry(null);
+    showToast("Enquiry updated successfully!");
   };
 
-  const getStatusBadge = (status: Enquiry["status"]) => {
+  const getStatusBadge = (status: CustomerEnquiry["status"]) => {
     switch (status) {
       case "new":
         return <Badge variant="warning">New Lead</Badge>;
-      case "in_progress":
-        return <Badge variant="info">In Progress</Badge>;
-      case "responded":
-        return <Badge variant="success">Responded</Badge>;
-      case "closed":
-        return <Badge variant="default">Closed</Badge>;
+      case "contacted":
+        return <Badge variant="info">Contacted</Badge>;
+      case "quote_sent":
+        return <Badge variant="secondary">Quote Sent</Badge>;
+      case "won":
+        return <Badge variant="success">Won / Completed</Badge>;
+      case "lost":
+        return <Badge variant="default">Lost</Badge>;
     }
   };
 
-  if (isLoading && !business) {
-    return (
-      <div className="space-y-6 max-w-5xl mx-auto py-6">
-        <div className="h-8 w-48 bg-gray-200 animate-pulse rounded-lg" />
-        <div className="h-64 bg-gray-200 animate-pulse rounded-xl" />
-      </div>
-    );
-  }
-
-  if (!business) {
-    return (
-      <div className="text-center py-12 space-y-4">
-        <p className="text-gray-600">Please create your business profile before accessing the enquiries inbox.</p>
-        <Link href="/business/profile">
-          <Button>Create Business Profile</Button>
-        </Link>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <Link href="/business" className="text-gray-400 hover:text-gray-600 transition-colors">
+          <Link href="/business" className="text-slate-400 hover:text-slate-600 transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Enquiries Inbox</h1>
-            <p className="text-sm text-gray-500">
-              Manage incoming customer messages, quote requests, and follow-ups.
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Customer Enquiries & Leads</h1>
+            <p className="text-xs sm:text-sm text-slate-500">
+              Manage incoming customer requests, follow-ups, and quotation conversions.
             </p>
           </div>
         </div>
+
+        <div className="w-full sm:w-72">
+          <Input
+            placeholder="Search leads by name, phone, locality..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
-      {feedback && (
-        <div
-          className={`rounded-xl p-4 flex items-center space-x-3 ${
-            feedback.type === "success"
-              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-              : "bg-rose-50 text-rose-800 border border-rose-200"
-          }`}
-        >
-          {feedback.type === "success" ? (
-            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-          ) : (
-            <AlertCircle className="h-5 w-5 text-rose-600 shrink-0" />
-          )}
-          <span className="text-sm font-medium">{feedback.message}</span>
+      {toastMessage && (
+        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3.5 flex items-center space-x-3 text-emerald-900 animate-in fade-in duration-200">
+          <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+          <span className="text-sm font-semibold">{toastMessage}</span>
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex items-center space-x-2 border-b border-gray-200 pb-2 overflow-x-auto">
-        {STATUS_FILTERS.map((f) => (
-          <button
-            key={f.id}
-            onClick={() => setActiveFilter(f.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-              activeFilter === f.id
-                ? "bg-indigo-600 text-white shadow-xs"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
+      {/* Pipeline Stage Tabs */}
+      <div className="flex items-center space-x-2 border-b border-slate-200 pb-2 overflow-x-auto">
+        {PIPELINE_STAGES.map((stg) => {
+          const count =
+            stg.id === "all"
+              ? enquiries.length
+              : enquiries.filter((e) => e.status === stg.id).length;
+          const isActive = activeStage === stg.id;
+          return (
+            <button
+              key={stg.id}
+              onClick={() => setActiveStage(stg.id)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex items-center space-x-1.5 cursor-pointer ${
+                isActive
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              <span>{stg.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  isActive ? "bg-indigo-800 text-indigo-100" : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Enquiries List */}
       <Card>
         <CardContent className="p-0">
-          {enquiries.length === 0 ? (
+          {filteredEnquiries.length === 0 ? (
             <div className="text-center py-16 space-y-3">
-              <Inbox className="h-10 w-10 text-gray-400 mx-auto" />
-              <div className="text-sm font-medium text-gray-900">No enquiries found</div>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                {activeFilter === "all"
-                  ? "You have not received any customer enquiries yet."
-                  : `No enquiries in "${STATUS_FILTERS.find((f) => f.id === activeFilter)?.label}" state.`}
+              <Inbox className="h-10 w-10 text-slate-300 mx-auto" />
+              <div className="text-sm font-semibold text-slate-800">No enquiries found</div>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                No customer leads match the current stage or search filters.
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
-              {enquiries.map((enq) => (
+            <div className="divide-y divide-slate-100">
+              {filteredEnquiries.map((enq) => (
                 <div
                   key={enq.id}
-                  onClick={() => handleOpenDetail(enq)}
-                  className="p-4 sm:p-5 hover:bg-gray-50/80 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  className="p-4 sm:p-5 hover:bg-slate-50/70 transition-colors flex flex-col sm:flex-row sm:items-start justify-between gap-4"
                 >
-                  <div className="space-y-1 max-w-xl">
-                    <div className="flex items-center space-x-3">
-                      <span className="font-semibold text-sm text-gray-900">
-                        {enq.customer_name}
+                  <div className="space-y-1.5 max-w-xl">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-sm sm:text-base text-slate-900">
+                        {enq.customerName}
                       </span>
                       {getStatusBadge(enq.status)}
-                    </div>
-                    <p className="text-xs text-gray-600 line-clamp-2">{enq.message}</p>
-                    <div className="flex items-center space-x-4 text-[11px] text-gray-400 pt-1">
-                      <span className="flex items-center">
-                        <Phone className="h-3 w-3 mr-1" /> {enq.customer_phone}
+                      <span className="text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
+                        {enq.source}
                       </span>
-                      <span className="flex items-center">
-                        <Mail className="h-3 w-3 mr-1" /> {enq.customer_email}
-                      </span>
+                      <span className="text-[11px] text-slate-400">({enq.createdAt})</span>
                     </div>
+
+                    <div className="text-xs text-indigo-600 font-semibold flex items-center space-x-2">
+                      <span>Service: {enq.serviceRequested}</span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-slate-500 font-normal">Location: {enq.locality}</span>
+                    </div>
+
+                    <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
+                      "{enq.message}"
+                    </p>
+
+                    {enq.ownerNotes && (
+                      <div className="text-[11px] text-amber-800 bg-amber-50/80 px-2.5 py-1 rounded-md border border-amber-200/60 flex items-center space-x-1.5">
+                        <FileText className="h-3 w-3 text-amber-600 shrink-0" />
+                        <span><strong>Notes:</strong> {enq.ownerNotes}</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="text-right text-xs text-gray-400 shrink-0">
-                    <div className="flex items-center sm:justify-end space-x-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{new Date(enq.created_at).toLocaleDateString()}</span>
+                  {/* Actions */}
+                  <div className="flex flex-wrap items-center sm:flex-col sm:items-end gap-2 shrink-0 pt-2 sm:pt-0">
+                    <div className="flex items-center space-x-2">
+                      <a
+                        href={`tel:${enq.customerPhone}`}
+                        className="inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition-colors"
+                      >
+                        <Phone className="h-3.5 w-3.5 mr-1" />
+                        Call ({enq.customerPhone})
+                      </a>
+                      <a
+                        href={`https://wa.me/${enq.customerPhone.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                          `Hello ${enq.customerName}, thank you for inquiring about ${enq.serviceRequested} with ${business.name}. How can we assist you today?`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 transition-colors"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5 mr-1" />
+                        WhatsApp
+                      </a>
                     </div>
-                    <span className="text-[11px] text-indigo-600 font-medium hover:underline block mt-1">
-                      View Details & Respond →
-                    </span>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-8"
+                      onClick={() => handleOpenModal(enq)}
+                    >
+                      Update Status / Notes
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -242,114 +238,45 @@ export default function BusinessEnquiriesPage() {
         </CardContent>
       </Card>
 
-      {/* Enquiry Detail Modal */}
+      {/* Modal for Details & Status Updates */}
       {selectedEnquiry && (
         <Modal
           isOpen={!!selectedEnquiry}
           onClose={() => setSelectedEnquiry(null)}
-          title={`Enquiry from ${selectedEnquiry.customer_name}`}
-          description={`Received on ${new Date(selectedEnquiry.created_at).toLocaleString()}`}
+          title={`Enquiry: ${selectedEnquiry.customerName}`}
+          description={`Customer phone: ${selectedEnquiry.customerPhone} • Received ${selectedEnquiry.createdAt}`}
         >
-          <div className="space-y-5">
-            {/* Customer Details Box */}
-            <div className="rounded-xl bg-gray-50 p-4 border border-gray-100 space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Customer Contact
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-xs text-gray-400 block">Phone</span>
-                  <a
-                    href={`tel:${selectedEnquiry.customer_phone}`}
-                    className="font-medium text-indigo-600 hover:underline flex items-center"
-                  >
-                    <Phone className="h-3.5 w-3.5 mr-1" />
-                    {selectedEnquiry.customer_phone}
-                  </a>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Email</span>
-                  <a
-                    href={`mailto:${selectedEnquiry.customer_email}`}
-                    className="font-medium text-indigo-600 hover:underline flex items-center"
-                  >
-                    <Mail className="h-3.5 w-3.5 mr-1" />
-                    {selectedEnquiry.customer_email}
-                  </a>
-                </div>
-              </div>
-
-              {/* Direct Actions */}
-              <div className="pt-2 flex flex-wrap gap-2">
-                <a
-                  href={`tel:${selectedEnquiry.customer_phone}`}
-                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition-colors"
-                >
-                  <Phone className="h-3.5 w-3.5 mr-1" /> Call Customer
-                </a>
-                <a
-                  href={`https://wa.me/${selectedEnquiry.customer_phone.replace(/[^0-9]/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 transition-colors"
-                >
-                  <MessageCircle className="h-3.5 w-3.5 mr-1" /> Chat on WhatsApp
-                </a>
-                <a
-                  href={`mailto:${selectedEnquiry.customer_email}`}
-                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 text-xs font-semibold hover:bg-sky-100 transition-colors"
-                >
-                  <Mail className="h-3.5 w-3.5 mr-1" /> Send Email
-                </a>
-              </div>
-            </div>
-
-            {/* Message Box */}
+          <form onSubmit={handleSaveModal} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Customer Message
-              </label>
-              <div className="p-3.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 leading-relaxed">
-                {selectedEnquiry.message}
-              </div>
+              <label className="block text-sm font-medium text-slate-700">Pipeline Status</label>
+              <select
+                value={statusSelect}
+                onChange={(e) => setStatusSelect(e.target.value as any)}
+                className="flex h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="new">New Lead (Awaiting Response)</option>
+                <option value="contacted">Contacted (Called / Messaged)</option>
+                <option value="quote_sent">Quote Sent (Price Shared)</option>
+                <option value="won">Won / Job Completed</option>
+                <option value="lost">Lost / Declined by Customer</option>
+              </select>
             </div>
 
-            {/* Status Update Form */}
-            <form onSubmit={handleStatusUpdate} className="space-y-4 pt-2 border-t border-gray-100">
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-gray-700">Update Status</label>
-                <select
-                  value={newStatus}
-                  onChange={(e) =>
-                    setNewStatus(e.target.value as "new" | "in_progress" | "responded" | "closed")
-                  }
-                  className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="new">New Lead</option>
-                  <option value="in_progress">In Progress (Reviewing)</option>
-                  <option value="responded">Responded (Contacted Customer)</option>
-                  <option value="closed">Closed / Completed</option>
-                </select>
-              </div>
+            <Textarea
+              label="Private Owner Notes / Quotation Details"
+              value={ownerNotesInput}
+              onChange={(e) => setOwnerNotesInput(e.target.value)}
+              placeholder="e.g. Quoted ₹1200 for 3 fans; visit scheduled for Saturday 11am."
+              rows={3}
+            />
 
-              <Textarea
-                label="Internal Notes (Visible only to you)"
-                value={ownerNotes}
-                onChange={(e) => setOwnerNotes(e.target.value)}
-                placeholder="e.g. Quoted ₹1200 on phone; customer agreed for Tuesday 10am visit."
-                rows={2}
-              />
-
-              <div className="flex justify-end space-x-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setSelectedEnquiry(null)}>
-                  Close
-                </Button>
-                <Button type="submit" isLoading={isUpdating}>
-                  Save Status
-                </Button>
-              </div>
-            </form>
-          </div>
+            <div className="flex justify-end space-x-2 pt-3">
+              <Button type="button" variant="outline" onClick={() => setSelectedEnquiry(null)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Updates</Button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>
