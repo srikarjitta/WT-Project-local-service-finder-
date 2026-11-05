@@ -14,25 +14,25 @@ The current GitHub repository is the source of truth. Before implementation, ins
 
 **Do not migrate frameworks, databases, auth providers, or major package versions just because an AI agent suggests it.** Keep the working stack already present in the repository. If the repo has no established backend/database, the team must agree once on the default below and record the decision here before coding.
 
-## 2. Preferred default only if the repository has no working stack
+## 2. Confirmed Project Stack (Agreed in Final Development Plan)
 
-| Layer | Default |
+The team has officially agreed and finalized the stack as documented in `Local-Service-Finder-Final-Development-Plan.md`:
+
+| Layer | Confirmed Choice |
 |---|---|
-| Frontend | React + Vite |
-| Language | JavaScript (use TypeScript only if the existing repo already uses it) |
-| Routing | React Router |
-| Styling | Tailwind CSS (or existing styling system; do not mix systems) |
+| Framework & Runtime | Next.js App Router (Node.js LTS runtime) |
+| Language | TypeScript |
+| Routing | Next.js App Router (`src/app`) |
+| Styling | Tailwind CSS |
 | Icons | Lucide React |
-| Backend | Node.js + Express |
-| API style | REST, JSON |
-| Database | PostgreSQL |
-| Database access | One agreed ORM/query approach (Prisma or existing approach; never mix) |
-| Authentication | One shared auth implementation with hashed passwords/session or JWT |
-| Image storage | One configured object-storage provider; database stores image URLs |
+| Backend & API | Next.js Route Handlers (`src/app/api/...`) & Server Actions (No separate Express server needed for MVP) |
+| API style | REST, JSON with Zod validation |
+| Database | Supabase PostgreSQL with Row Level Security (RLS) |
+| Database access | Supabase Client (`@supabase/supabase-js`, `@supabase/ssr`) |
+| Authentication | Supabase Auth (`auth.users` linked to `public.profiles`) |
+| Image storage | Supabase Storage (`business-images` bucket) |
 | Version control | Git + GitHub |
-| Deployment | Choose based on the existing stack and available student/free-tier accounts |
-
-If the existing repository uses MongoDB/Mongoose, keep MongoDB/Mongoose rather than switching to PostgreSQL for this minor project. Never run PostgreSQL and MongoDB as competing application databases.
+| Deployment | Vercel (Frontend/API) + Supabase (Database/Auth/Storage) |
 
 ## 3. Application roles
 
