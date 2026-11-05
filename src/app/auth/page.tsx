@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -273,7 +273,7 @@ function SignUpForm({ onSwitch }: { onSwitch: () => void }) {
     setSuccess(true);
 
     await new Promise((r) => setTimeout(r, 1500));
-    router.push("/business");
+    router.push("/onboarding");
   }
 
   if (success) {
@@ -281,7 +281,7 @@ function SignUpForm({ onSwitch }: { onSwitch: () => void }) {
       <div className="flex flex-col items-center gap-4 py-8 text-center">
         <CheckCircle2 className="text-emerald-500" size={56} />
         <h3 className="text-lg font-bold text-slate-800">Account created!</h3>
-        <p className="text-sm text-slate-500">Redirecting you to your business dashboard...</p>
+        <p className="text-sm text-slate-500">Setting up your business profile...</p>
         <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
       </div>
     );
