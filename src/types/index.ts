@@ -49,7 +49,7 @@ export interface Business {
   subCategory: string;
   rating: number;
   reviewCount: number;
-  priceLevel: '$' | '$$' | '$$$' | '$$$$';
+  priceLevel: '₹' | '₹₹' | '₹₹₹' | '₹₹₹₹' | '$' | '$$' | '$$$' | '$$$$';
   priceRangeText: string;
   verified: boolean;
   featured?: boolean;

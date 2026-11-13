@@ -67,10 +67,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <X className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center font-black text-white text-base">
-              SF
+            <div className="w-8 h-8 rounded-xl bg-[#4F46E5] flex items-center justify-center font-extrabold text-white text-xs shadow-sm">
+              LSF
             </div>
-            <span className="font-extrabold tracking-tight text-lg text-white">ServiFind</span>
+            <span className="font-extrabold tracking-tight text-lg text-white">Local Service Finder</span>
             <span className="text-[10px] bg-blue-500/40 text-blue-100 font-bold px-2 py-0.5 rounded-full border border-blue-400/30">
               Customer Portal
             </span>
@@ -232,7 +232,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </form>
 
           <p className="text-center text-[11px] text-slate-400 mt-4">
-            By proceeding, you agree to ServiFind&apos;s{' '}
+            By proceeding, you agree to Local Service Finder&apos;s{' '}
             <span className="text-blue-600 hover:underline cursor-pointer">Terms of Service</span> and{' '}
             <span className="text-blue-600 hover:underline cursor-pointer">Privacy Policy</span>.
           </p>

@@ -127,7 +127,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
               <a
                 href={`https://wa.me/${cleanWhatsapp}?text=Hi%20${encodeURIComponent(
                   business.name
-                )},%20I%20found%20your%20listing%20on%20ServiFind%20and%20would%20like%20to%20know%20more%20about%20your%20services.`}
+                )},%20I%20found%20your%20listing%20on%20Local%20Service%20Finder%20and%20would%20like%20to%20know%20more%20about%20your%20services.`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full inline-flex items-center justify-center font-bold text-sm bg-[#25D366] hover:bg-[#1EBE5D] text-white rounded-xl h-11 gap-2 shadow-sm"
@@ -142,7 +142,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
           <div className="pt-2 border-t border-slate-100 flex items-start gap-2.5 text-xs text-slate-500">
             <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <span>
-              Verified business profile. ServiFind never shares your personal numbers with third-party advertisers.
+              Verified business profile. Local Service Finder never shares your personal numbers with third-party advertisers.
             </span>
           </div>
         </div>

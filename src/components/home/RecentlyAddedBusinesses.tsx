@@ -15,7 +15,7 @@ export const RecentlyAddedBusinesses: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">
               <Sparkles className="w-4 h-4 text-blue-500" />
-              <span>New On ServiFind</span>
+              <span>New On Local Service Finder</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#1E3A8A] tracking-tight">
               Recently Added Businesses

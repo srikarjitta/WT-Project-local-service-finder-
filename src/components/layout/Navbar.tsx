@@ -97,16 +97,16 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20 gap-3 md:gap-6">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-              <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-[#1E3A8A] flex items-center justify-center text-white font-black text-xl shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                SF
+            <Link href="/" className="flex items-center gap-3 shrink-0 group">
+              <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-[#4F46E5] flex items-center justify-center text-white font-extrabold text-base md:text-lg shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform tracking-wide">
+                LSF
               </div>
               <div className="flex flex-col">
-                <span className="text-xl md:text-2xl font-black tracking-tight text-[#1E3A8A] group-hover:text-blue-600 transition-colors">
-                  Servi<span className="text-blue-600">Find</span>
+                <span className="text-base sm:text-lg md:text-xl font-extrabold tracking-tight text-[#0F172A] group-hover:text-blue-600 transition-colors leading-tight">
+                  Local Service Finder
                 </span>
-                <span className="text-[10px] font-semibold text-slate-400 -mt-1 tracking-wider uppercase">
-                  Local Services
+                <span className="text-xs font-semibold text-[#6366F1] leading-tight mt-0.5">
+                  Customer Portal
                 </span>
               </div>
             </Link>

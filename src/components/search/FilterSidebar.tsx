@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { Filter, RotateCcw, Star, Check, ShieldCheck, DollarSign, Clock, MapPin } from 'lucide-react';
+import { Filter, RotateCcw, Star, Check, ShieldCheck, IndianRupee, Clock, MapPin } from 'lucide-react';
 import { POPULAR_CATEGORIES } from '@/data/categories';
 import { SUPPORTED_LOCATIONS } from '@/data/locations';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,7 @@ export interface FilterState {
   category: string;
   location: string;
   rating: number; // 0, 4.0, 4.5
-  priceRange: string[]; // ['$', '$$', '$$$', '$$$$']
+  priceRange: string[]; // ['₹', '₹₹', '₹₹₹', '₹₹₹₹']
   availability: 'all' | 'openNow';
   verifiedOnly: boolean;
 }
@@ -184,14 +184,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         </div>
       </div>
 
-      {/* 5. Price Range ($ / $$ / $$$ / $$$$) */}
+      {/* 5. Price Range (₹ / ₹₹ / ₹₹₹ / ₹₹₹₹) */}
       <div className="pb-4 border-b border-slate-100">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5 flex items-center gap-1.5">
-          <DollarSign className="w-3.5 h-3.5 text-blue-600" />
+          <IndianRupee className="w-3.5 h-3.5 text-blue-600" />
           Price Level
         </h4>
         <div className="grid grid-cols-4 gap-1.5">
-          {['$', '$$', '$$$', '$$$$'].map((level) => {
+          {['₹', '₹₹', '₹₹₹', '₹₹₹₹'].map((level) => {
             const isSelected = filters.priceRange.includes(level);
             return (
               <button

@@ -35,16 +35,21 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand info */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-[#1E3A8A] flex items-center justify-center text-white font-black text-xl shadow-md">
-                SF
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#4F46E5] flex items-center justify-center text-white font-extrabold text-base shadow-md shadow-indigo-500/20">
+                LSF
               </div>
-              <span className="text-2xl font-black tracking-tight text-[#1E3A8A]">
-                Servi<span className="text-blue-600">Find</span>
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-extrabold tracking-tight text-[#0F172A]">
+                  Local Service Finder
+                </span>
+                <span className="text-xs font-semibold text-[#6366F1]">
+                  Customer Portal
+                </span>
+              </div>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed max-w-sm">
-              ServiFind is India&apos;s modern local services marketplace. We connect homeowners, businesses, and everyday consumers with verified, highly rated local professionals in Khammam, Hyderabad, and major cities.
+              Local Service Finder is your trusted community directory connecting residents with verified, highly rated local professionals in Khammam, Hyderabad, and major cities.
             </p>
 
             <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 bg-blue-50 p-2.5 rounded-xl border border-blue-100 max-w-sm">
@@ -115,7 +120,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Sub-bar */}
         <div className="mt-12 pt-8 border-t border-[#DBEAFE] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div>
-            © {new Date().getFullYear()} ServiFind Technologies Pvt Ltd. All rights reserved.
+            © {new Date().getFullYear()} Local Service Finder. All rights reserved.
           </div>
           <div className="flex items-center gap-6">
             <Link href="/" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>

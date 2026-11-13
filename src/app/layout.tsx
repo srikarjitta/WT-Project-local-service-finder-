@@ -4,7 +4,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
-  title: 'ServiFind — Local Service Finder Platform',
+  title: 'Local Service Finder — Discover & Book Local Services',
   description:
     'Find and connect with trusted local businesses, service professionals, AC repair technicians, salons, caterers, and healthcare experts near you.',
 };

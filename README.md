@@ -1,4 +1,4 @@
-# ServiFind — Local Service Finder Platform
+# Local Service Finder (LSF) Platform
 
 A modern, responsive frontend user interface for discovering, comparing, and contacting local businesses and service professionals. Inspired by the discovery experience of Justdial with a modern blue-and-white visual identity.
 
@@ -34,7 +34,7 @@ A modern, responsive frontend user interface for discovering, comparing, and con
 ## 📁 Key Pages & Features
 
 ### 1. Main Navigation Bar (`src/components/layout/Navbar.tsx`)
-- Platform logo and branding (`ServiFind`).
+- Platform logo and branding (`LSF - Local Service Finder`).
 - Interactive **Location Selector** (Khammam, Hyderabad, Bengaluru, Mumbai, Pune, Vijayawada).
 - Integrated search bar for instant keyword queries.
 - **Categories Mega Dropdown** linking to all 12 primary categories.
