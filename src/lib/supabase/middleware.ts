@@ -34,8 +34,19 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Protect Business Owner Dashboard
-  if (pathname.startsWith("/business")) {
+  // List of reserved business owner management subpaths
+  const isBusinessOwnerRoute =
+    pathname === "/business" ||
+    pathname.startsWith("/business/profile") ||
+    pathname.startsWith("/business/services") ||
+    pathname.startsWith("/business/hours") ||
+    pathname.startsWith("/business/photos") ||
+    pathname.startsWith("/business/enquiries") ||
+    pathname.startsWith("/business/reviews") ||
+    pathname.startsWith("/business/analytics");
+
+  // 1. Protect Business Owner Portal
+  if (isBusinessOwnerRoute) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/auth";
@@ -51,12 +62,12 @@ export async function updateSession(request: NextRequest) {
 
     if (profile?.role !== "business_owner" && profile?.role !== "admin") {
       const url = request.nextUrl.clone();
-      url.pathname = "/";
+      url.pathname = "/onboarding";
       return NextResponse.redirect(url);
     }
   }
 
-  // Protect Admin Dashboard (allow /admin/login to pass through)
+  // 2. Protect Admin Dashboard (allow /admin/login to pass through)
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
     if (!user) {
       const url = request.nextUrl.clone();
