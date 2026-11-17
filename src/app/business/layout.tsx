@@ -240,6 +240,22 @@ function BusinessShell({ children }: { children: React.ReactNode }) {
 }
 
 export default function BusinessLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  const isOwnerPortalRoute =
+    pathname === "/business" ||
+    pathname.startsWith("/business/profile") ||
+    pathname.startsWith("/business/services") ||
+    pathname.startsWith("/business/hours") ||
+    pathname.startsWith("/business/photos") ||
+    pathname.startsWith("/business/enquiries") ||
+    pathname.startsWith("/business/reviews") ||
+    pathname.startsWith("/business/analytics");
+
+  if (!isOwnerPortalRoute) {
+    return <>{children}</>;
+  }
+
   return (
     <BusinessProvider>
       <BusinessShell>{children}</BusinessShell>
